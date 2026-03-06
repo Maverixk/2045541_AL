@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  simulator:
+    image: mars-iot-simulator:multiarch_v1
+    ports:
+      - "8080:8080"
+    networks:
+      - mars_net
+
+  message_broker:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # AMQP communication port (events)
+      - "15672:15672" # Dashboard meant for debugging
+    networks:
+      - mars_net
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  database:
+    image: mariadb:lts
+    environment:
+      MYSQL_ROOT_PASSWORD: mars_root_secret
+      MYSQL_DATABASE: mars_automation
+      MYSQL_USER: mars_user
+      MYSQL_PASSWORD: mars_password
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    networks:
+      - mars_net
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  ingestion:
+    build: ./ingestion
+    depends_on:
+      - simulator
+      - message_broker
+    networks:
+      - mars_net
+
+  normalization:
+    build: ./normalization
+    depends_on:
+      - message_broker
+    networks:
+      - mars_net
+
+  automation_engine:
+    build: ./automation_engine
+    ports:
+      - "8000:8000"
+    depends_on:
+      simulator:
+        condition: service_started
+      message_broker:
+        condition: service_started
+      database:
+        condition: service_healthy 
+    networks:
+      - mars_net
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8001:8001"
+    environment:
+      - LOGIC_API_URL=http://automation_engine:8000
+    depends_on:
+      - automation_engine
+    networks:
+      - mars_net
+
+networks:
+  mars_net:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  rabbitmq_data:
