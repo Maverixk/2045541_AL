@@ -37,6 +37,7 @@ services:
       - mars_net
     volumes:
       - mariadb_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   ingestion:
     build: ./ingestion
@@ -52,7 +53,10 @@ services:
 
   normalization:
     build: ./normalization
+    environment:
+      - RABBITMQ_HOST=message_broker
     depends_on:
+      - ingestion
       - message_broker
     networks:
       - mars_net
@@ -61,6 +65,14 @@ services:
     build: ./automation_engine
     ports:
       - "8000:8000"
+    environment:
+      - SIMULATOR_URL=http://simulator:8080/api
+      - RABBITMQ_HOST=message_broker
+      - DB_HOST=database
+      - DB_USER=mars_user
+      - DB_PASS=mars_password
+      - DB_NAME=mars_automation
+      - PYTHONUNBUFFERED=1
     depends_on:
       simulator:
         condition: service_started

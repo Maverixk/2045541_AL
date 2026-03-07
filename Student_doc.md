@@ -112,7 +112,7 @@ The database container does not connect to external services. It receives SQL qu
 
 #### MICROSERVICE: mariadb
 - TYPE: database
-- DESCRIPTION: Stores all relevant data concerning automation rules and historical sensor events.
+- DESCRIPTION: Stores all relevant data concerning automation rules.
 - PORTS: 3306 (Internal), 3307 (Host)
 - TECHNOLOGICAL SPECIFICATION:
 Official `mariadb:lts` image. Relational database management system utilizing SQL for data storage and retrieval.
@@ -121,9 +121,7 @@ Centralized data storage layer supporting the business logic of the automation e
 
 - DB STRUCTURE: 
 
-	**_automation_rules_** : | **_id_** | sensor_name | condition_operator | target_value | actuator_name | target_state | active |
-	**_sensor_history_** : | **_event_id_** | timestamp | sensor_id | metric_type | metric_value | unit | status_flag |
-
+	`automation_rules` : | **_id_** | sensor_id | operator | threshold_value | actuator_name | target_state |
 
 ## CONTAINER_NAME: ingestion
 

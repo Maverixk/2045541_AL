@@ -4,7 +4,7 @@ import sys
 import time
 import pika
 
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "message_broker")
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
 INPUT_QUEUE = "raw_sensors_data"
 OUTPUT_QUEUE = "normalized_sensors_data"
 
@@ -18,16 +18,14 @@ def connect_to_rabbitmq():
             # Declare queues
             channel.queue_declare(queue=INPUT_QUEUE, durable=True)
             channel.queue_declare(queue=OUTPUT_QUEUE, durable=True)
-            print(f"[Normalization] Connected to RabbitMQ on {RABBITMQ_HOST}", flush=True)
+            print(f"Connected to RabbitMQ on {RABBITMQ_HOST}", flush=True)
             return connection, channel
         except pika.exceptions.AMQPConnectionError:
-            print("[Normalization] RabbitMQ not ready yet... wait 3 seconds", flush=True)
+            print("RabbitMQ not ready yet... wait 3 seconds", flush=True)
             time.sleep(3)
 
 def process_and_publish(channel, raw_msg):
-    """
-    Parses the raw JSON payload and flattens it into zero or more normalized events.
-    """
+    """Parses the raw JSON payload and flattens it into zero or more normalized events."""
     events = []
     
     sensor_id = raw_msg.get("sensor_id")
@@ -35,7 +33,7 @@ def process_and_publish(channel, raw_msg):
     status = raw_msg.get("status")
     
     if not (sensor_id and captured_at and status):
-        print(f"[Normalization] Skipping invalid/missing base fields: {raw_msg}", flush=True)
+        print(f"Skipping invalid/missing base fields: {raw_msg}", flush=True)
         return
 
     # 1. Scalar (rest.scalar.v1)
@@ -97,7 +95,7 @@ def process_and_publish(channel, raw_msg):
             })
             
     else:
-        print(f"[Normalization] Unknown schema format for payload: {raw_msg}", flush=True)
+        print(f"Unknown schema format for payload: {raw_msg}", flush=True)
 
     # Publish normalized events
     for event in events:
@@ -110,7 +108,7 @@ def process_and_publish(channel, raw_msg):
             )
         )
     if events:
-        print(f"[Normalization] Standardized and forwarded {len(events)} events for {sensor_id}", flush=True)
+        print(f"Standardized and forwarded {len(events)} events for {sensor_id}", flush=True)
 
 def callback(channel, method, properties, body):
     try:
@@ -118,11 +116,11 @@ def callback(channel, method, properties, body):
         process_and_publish(channel, raw_msg)
         channel.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
-        print(f"[Normalization] Error processing message: {e}", flush=True)
+        print(f"Error processing message: {e}", flush=True)
         channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
 def run():
-    print("[Normalization] Service starting...", flush=True)
+    print("Service starting...", flush=True)
     time.sleep(5)
     
     connection, channel = connect_to_rabbitmq()
@@ -130,12 +128,12 @@ def run():
     channel.basic_qos(prefetch_count=1)
     channel.basic_consume(queue=INPUT_QUEUE, on_message_callback=callback)
     
-    print("[Normalization] Waiting for raw messages. To exit press CTRL+C", flush=True)
+    print("Waiting for raw messages. To exit press CTRL+C", flush=True)
     channel.start_consuming()
 
 if __name__ == '__main__':
     try:
         run()
     except KeyboardInterrupt:
-        print("\n[Normalization] Service interrupted.")
+        print("\nService interrupted.")
         sys.exit(0)
