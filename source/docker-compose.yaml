@@ -40,6 +40,10 @@ services:
 
   ingestion:
     build: ./ingestion
+    environment:
+      - SIMULATOR_URL=http://simulator:8080/api/sensors
+      - RABBITMQ_HOST=message_broker
+      - PYTHONUNBUFFERED=1
     depends_on:
       - simulator
       - message_broker
