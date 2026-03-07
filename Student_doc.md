@@ -226,11 +226,11 @@ Distributed modular monolith: integrates a REST Controller layer for the UI, a S
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | GET | /api/status | Returns current metrics and the status of actuators. | 1, 2 |
+    | GET | /api/status | Returns current metrics and the status of sensors actuators. | 1, 2 |
     | GET | /api/rules | Returns the list of active automation rules read from the DB. | 5 |
     | POST | /api/rules | Adds a new automation rule to the DB. | 4 |
-    | DELETE | /api/rules/{id} | Deletes a specific rule from the DB. | 6 |
-    | POST | /api/actuators/{name} | Manually forwards an "ON/OFF" state change to the simulator. | 3 |
+    | POST | /api/actuators | Manually forwards an "ON/OFF" state change to the simulator. | 3 |
+	| DELETE | /api/rules/{id} | Deletes a specific rule from the DB. | 6 |
 
 
 ## CONTAINER_NAME: frontend
