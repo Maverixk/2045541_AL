@@ -25,6 +25,7 @@ latest_actuator_state = {}
 # Pydantic model for rules and manual commands
 class Rule(BaseModel):
     sensor_id: str
+    metric: str
     operator: str
     threshold_value: float
     actuator_name: str
@@ -48,18 +49,22 @@ def get_db_connection():
 def evaluate_rules(event):
     """Checks if the received event triggers some rule(s) in the DB."""
     sensor_id = event.get("sensor_id")
+    metric = event.get("metric")
     value = event.get("value")
     
-    if sensor_id is None or value is None:
+    if sensor_id is None or metric is None or value is None:
         return
 
-    latest_sensor_data[sensor_id] = event
+    # Nested caching logic so multiple metrics don't overwrite each other
+    if sensor_id not in latest_sensor_data:
+        latest_sensor_data[sensor_id] = {}
+    latest_sensor_data[sensor_id][metric] = event
 
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        # Fetch all rules associated to that sensor
-        cursor.execute("SELECT * FROM automation_rules WHERE sensor_id = %s", (sensor_id,))
+        # Fetch rules matching both sensor_id AND metric
+        cursor.execute("SELECT * FROM automation_rules WHERE sensor_id = %s AND metric = %s", (sensor_id, metric))
         rules = cursor.fetchall()
         
         for rule in rules:

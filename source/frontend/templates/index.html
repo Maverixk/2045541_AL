@@ -78,6 +78,10 @@
                             <input type="text" class="form-control" id="form-sensor" placeholder="e.g. greenhouse_temperature" required>
                         </div>
                         <div class="mb-2">
+                            <label>Metric</label>
+                            <input type="text" class="form-control" id="form-metric" placeholder="e.g. temperature_c" required>
+                        </div>
+                        <div class="mb-2">
                             <label>Operator</label>
                             <select class="form-select" id="form-operator">
                                 <option value="<"><</option>
@@ -139,23 +143,27 @@
         const container = document.getElementById('sensors-container');
         container.innerHTML = '';
         
-        for (const [sensor_id, s_data] of Object.entries(sensors)) {
-            const isWarning = s_data.status === 'warning';
-            const cardBg = isWarning ? 'sensor-warning' : 'bg-white';
-            
-            const cardHtml = `
-                <div class="col-md-3">
-                    <div class="card ${cardBg}">
-                        <div class="card-body">
-                            <h6 class="card-title text-truncate" title="${sensor_id}">${sensor_id}</h6>
-                            <h3 class="card-text">${parseFloat(s_data.value).toFixed(2)} <span class="fs-6">${s_data.unit}</span></h3>
-                            <small class="text-muted">Metric: ${s_data.metric}</small><br>
-                            <small class="text-muted">Last update: ${new Date(s_data.captured_at).toLocaleTimeString()}</small>
+        // Loop through each sensor
+        for (const [sensor_id, metrics_obj] of Object.entries(sensors)) {
+            // Loop through each metric inside that sensor
+            for (const [metric_name, s_data] of Object.entries(metrics_obj)) {
+                const isWarning = s_data.status === 'warning';
+                const cardBg = isWarning ? 'sensor-warning' : 'bg-white';
+                
+                const cardHtml = `
+                    <div class="col-md-3">
+                        <div class="card ${cardBg}">
+                            <div class="card-body">
+                                <h6 class="card-title text-truncate" title="${sensor_id}">${sensor_id}</h6>
+                                <h3 class="card-text">${parseFloat(s_data.value).toFixed(2)} <span class="fs-6">${s_data.unit}</span></h3>
+                                <small class="text-muted">Metric: ${s_data.metric}</small><br>
+                                <small class="text-muted">Last update: ${new Date(s_data.captured_at).toLocaleTimeString()}</small>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            container.innerHTML += cardHtml;
+                `;
+                container.innerHTML += cardHtml;
+            }
         }
     }
 
@@ -200,7 +208,7 @@
             li.className = 'list-group-item d-flex justify-content-between align-items-center';
             li.innerHTML = `
                 <span>
-                    <strong>IF</strong> ${rule.sensor_id} 
+                    <strong>IF</strong> ${rule.sensor_id} <em>[${rule.metric}]</em>
                     <span class="badge bg-secondary">${rule.operator}</span> 
                     ${rule.threshold_value} 
                     <strong>THEN SET</strong> ${rule.actuator_name} = 
@@ -239,6 +247,7 @@
         e.preventDefault();
         const payload = {
             sensor_id: document.getElementById('form-sensor').value,
+            metric: document.getElementById('form-metric').value,
             operator: document.getElementById('form-operator').value,
             threshold_value: parseFloat(document.getElementById('form-threshold').value),
             actuator_name: document.getElementById('form-actuator').value,

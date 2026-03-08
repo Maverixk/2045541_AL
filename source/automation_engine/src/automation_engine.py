@@ -89,7 +89,12 @@ def add_rule(rule: Rule):
         valid_sens_str = ", ".join(valid_sensors) if valid_sensors else "Nessuno (in attesa di dati)"
         raise HTTPException(status_code=400, detail=f"Unknown sensor '{rule.sensor_id}'. Valid are: {valid_sens_str}")
     
-    # 3. Validation check over actuators
+    # 3. Validation check over metric for the given sensor
+    valid_metrics = set(latest_sensor_data[rule.sensor_id].keys())
+    if not rule.metric or not rule.metric.strip() or rule.metric not in valid_metrics:
+        raise HTTPException(status_code=400, detail=f"Unknown metric '{rule.metric}' for sensor '{rule.sensor_id}'. Valid are: {', '.join(valid_metrics)}")
+
+    # 4. Validation check over actuators
     if rule.actuator_name not in valid_actuators:
         raise HTTPException(status_code=400, detail=f"Unknown actuator '{rule.actuator_name}'. Valid are: {', '.join(valid_actuators)}")
         
@@ -98,16 +103,16 @@ def add_rule(rule: Rule):
 
     try:
         # Checks if the rule has to be overwritten or inserted
-        check_sql = "SELECT id FROM automation_rules WHERE sensor_id = %s AND operator = %s"
-        cursor.execute(check_sql, (rule.sensor_id, rule.operator))
+        check_sql = "SELECT id FROM automation_rules WHERE sensor_id = %s AND metric = %s AND operator = %s"
+        cursor.execute(check_sql, (rule.sensor_id, rule.metric, rule.operator))
         existing_rule = cursor.fetchone()
-        if existing_rule:
-            delete_sql = "DELETE FROM automation_rules WHERE sensor_id = %s AND operator = %s"
-            cursor.execute(delete_sql, (rule.sensor_id, rule.operator))
-            print(f"Overwriting existing rule for {rule.sensor_id}: {rule.operator}", flush=True)
         
-        sql = "INSERT INTO automation_rules (sensor_id, operator, threshold_value, actuator_name, target_state) VALUES (%s, %s, %s, %s, %s)"
-        val = (rule.sensor_id, rule.operator, rule.threshold_value, rule.actuator_name, rule.target_state)
+        if existing_rule:
+            delete_sql = "DELETE FROM automation_rules WHERE sensor_id = %s AND metric = %s AND operator = %s"
+            cursor.execute(delete_sql, (rule.sensor_id, rule.metric, rule.operator))
+        
+        sql = "INSERT INTO automation_rules (sensor_id, metric, operator, threshold_value, actuator_name, target_state) VALUES (%s, %s, %s, %s, %s, %s)"
+        val = (rule.sensor_id, rule.metric, rule.operator, rule.threshold_value, rule.actuator_name, rule.target_state)
         cursor.execute(sql, val)
         conn.commit()
         

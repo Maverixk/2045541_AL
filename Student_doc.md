@@ -121,7 +121,7 @@ Centralized data storage layer supporting the business logic of the automation e
 
 - DB STRUCTURE: 
 
-	`automation_rules` : | **_id_** | sensor_id | operator | threshold_value | actuator_name | target_state |
+	`automation_rules` : | **_id_** | sensor_id | metric | operator | threshold_value | actuator_name | target_state |
 
 ## CONTAINER_NAME: ingestion
 

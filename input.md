@@ -39,13 +39,14 @@ To handle the disparity of REST sensor payloads provided by the Mars Simulator (
 Automation rules are stored in a persistent database (i.e., MariaDB) to withstand service restarts.
 
 **Logical Structure:**
-`IF <sensor_id> <operator> <threshold> THEN SET <actuator_name> to <state>`
+`IF <sensor_id> [<metric>] <operator> <threshold> THEN SET <actuator_name> to <state>`
 
 **Database Table (`automation_rules`):**
 | Column | Type | Description |
 |---|---|---|
 | `id` | Integer | Primary Key |
 | `sensor_id` | String | The sensor to evaluate (e.g., `greenhouse_temperature`) |
+| `metric` | String | The metric that defines the rule (e.g., `temperature_c`) |  
 | `operator` | String | One of: `<`, `<=`, `=`, `>`, `>=` |
 | `threshold_value` | Float | The boundary condition against the sensor's value |
 | `actuator_name` | String | Target actuator to trigger (e.g., `cooling_fan`) |

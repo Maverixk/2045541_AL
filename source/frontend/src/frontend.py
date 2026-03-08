@@ -18,6 +18,7 @@ class ActuatorCommand(BaseModel):
 
 class RuleCommand(BaseModel):
     sensor_id: str
+    metric: str
     operator: str
     threshold_value: float
     actuator_name: str
