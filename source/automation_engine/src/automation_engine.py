@@ -12,7 +12,8 @@ from src.logic import (
     latest_actuator_state, 
     load_actuators_state, 
     rabbitmq_worker,
-    SIMULATOR_URL
+    SIMULATOR_URL,
+    init_db
 )
 
 app = FastAPI(title="Mars Automation Engine")
@@ -20,6 +21,9 @@ app = FastAPI(title="Mars Automation Engine")
 # Worker starts on API startup
 @app.on_event("startup")
 def startup_event():
+    # Initialize the database table if it doesn't exist
+    init_db()
+    
     load_actuators_state()
 
     # Starts RabbitMQ's consumer on a separate thread in order not to block FastAPI
@@ -75,10 +79,20 @@ def manual_actuator_control(command: ManualCommand):
 
 @app.post("/api/rules")
 def add_rule(rule: Rule):
-    """Creates a new automation rule."""
+    """Creates a new automation rule with validation."""
+    
+    # 1. Validation check over actuators
+    valid_actuators = {"cooling_fan", "entrance_humidifier", "hall_ventilation", "habitat_heater"}
+    if rule.actuator_name not in valid_actuators:
+        raise HTTPException(status_code=400, detail=f"Unknown actuator '{rule.actuator_name}'. Valid are: {', '.join(valid_actuators)}")
+        
+    # 2. Validation check over empty sensors
+    if not rule.sensor_id or not rule.sensor_id.strip():
+        raise HTTPException(status_code=400, detail="Sensor ID cannot be empty.")
+        
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     try:
         # Check if the rule has to be overwritten or inserted
         check_sql = "SELECT id FROM automation_rules WHERE sensor_id = %s AND operator = %s"

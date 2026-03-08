@@ -44,6 +44,32 @@ def get_db_connection():
         port=3306
     )
 
+def init_db():
+    """Create the tables if they don't exist."""
+    print("Checking and creating necessary DB tables...", flush=True)
+    while True:
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS automation_rules (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    sensor_id VARCHAR(255) NOT NULL,
+                    operator VARCHAR(10) NOT NULL,
+                    threshold_value FLOAT NOT NULL,
+                    actuator_name VARCHAR(255) NOT NULL,
+                    target_state VARCHAR(10) NOT NULL
+                )
+            """)
+            conn.commit()
+            cursor.close()
+            conn.close()
+            print("Database initialized successfully.", flush=True)
+            break
+        except mysql.connector.Error as e:
+            print(f"Database not ready yet, retrying... Error: {e}", flush=True)
+            time.sleep(3)
+
 # Rules evaluation executed in background
 def evaluate_rules(event):
     """Checks if the received event triggers some rule(s) in the DB."""
