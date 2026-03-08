@@ -8,10 +8,10 @@ from pydantic import BaseModel
 app = FastAPI(title="Mars Dashboard")
 templates = Jinja2Templates(directory="templates")
 
-# L'URL per contattare l'Automation Engine (impostato nel docker-compose)
+# URL to contact the Automation Engine (set in docker-compose)
 LOGIC_API_URL = os.getenv("LOGIC_API_URL", "http://automation_engine:8000")
 
-# Modelli per ricevere i dati da Javascript
+# Models to receive data from Javascript
 class ActuatorCommand(BaseModel):
     actuator_name: str
     target_state: str
@@ -25,12 +25,12 @@ class RuleCommand(BaseModel):
 
 @app.get("/")
 def read_root(request: Request):
-    """Renderizza la pagina index.html"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    """Renders the index.html page"""
+    return templates.TemplateResponse("index.html", {"request": request})       
 
 @app.get("/api/dashboard-data")
 def get_dashboard_data():
-    """Proxy point: contatta l'Automation Engine per avere i dati aggiornati."""
+    """Proxy point: contacts the Automation Engine to fetch updated data."""
     try:
         status_res = requests.get(f"{LOGIC_API_URL}/api/status", timeout=2)
         rules_res = requests.get(f"{LOGIC_API_URL}/api/rules", timeout=2)
