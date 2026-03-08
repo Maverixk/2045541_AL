@@ -13,7 +13,6 @@ from src.logic import (
     load_actuators_state, 
     rabbitmq_worker,
     SIMULATOR_URL,
-    init_db
 )
 
 app = FastAPI(title="Mars Automation Engine")
@@ -21,9 +20,6 @@ app = FastAPI(title="Mars Automation Engine")
 # Worker starts on API startup
 @app.on_event("startup")
 def startup_event():
-    # Initialize the database table if it doesn't exist
-    init_db()
-    
     load_actuators_state()
 
     # Starts RabbitMQ's consumer on a separate thread in order not to block FastAPI
@@ -81,20 +77,27 @@ def manual_actuator_control(command: ManualCommand):
 def add_rule(rule: Rule):
     """Creates a new automation rule with validation."""
     
-    # 1. Validation check over actuators
-    valid_actuators = {"cooling_fan", "entrance_humidifier", "hall_ventilation", "habitat_heater"}
-    if rule.actuator_name not in valid_actuators:
-        raise HTTPException(status_code=400, detail=f"Unknown actuator '{rule.actuator_name}'. Valid are: {', '.join(valid_actuators)}")
-        
-    # 2. Validation check over empty sensors
+    valid_sensors = set(latest_sensor_data.keys())
+    valid_actuators = set(latest_actuator_state.keys())
+    
+    # 1. Validation check over empty sensors
     if not rule.sensor_id or not rule.sensor_id.strip():
         raise HTTPException(status_code=400, detail="Sensor ID cannot be empty.")
+        
+    # 2. Validation check over invalid sensors
+    if rule.sensor_id not in valid_sensors:
+        valid_sens_str = ", ".join(valid_sensors) if valid_sensors else "Nessuno (in attesa di dati)"
+        raise HTTPException(status_code=400, detail=f"Unknown sensor '{rule.sensor_id}'. Valid are: {valid_sens_str}")
+    
+    # 3. Validation check over actuators
+    if rule.actuator_name not in valid_actuators:
+        raise HTTPException(status_code=400, detail=f"Unknown actuator '{rule.actuator_name}'. Valid are: {', '.join(valid_actuators)}")
         
     conn = get_db_connection()
     cursor = conn.cursor()
 
     try:
-        # Check if the rule has to be overwritten or inserted
+        # Checks if the rule has to be overwritten or inserted
         check_sql = "SELECT id FROM automation_rules WHERE sensor_id = %s AND operator = %s"
         cursor.execute(check_sql, (rule.sensor_id, rule.operator))
         existing_rule = cursor.fetchone()

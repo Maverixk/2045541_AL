@@ -25,7 +25,7 @@ class RuleCommand(BaseModel):
 
 @app.get("/")
 def read_root(request: Request):
-    """Renders the index.html page"""
+    """Renders the index.html page."""
     return templates.TemplateResponse("index.html", {"request": request})       
 
 @app.get("/api/dashboard-data")
@@ -49,7 +49,7 @@ def get_dashboard_data():
 
 @app.post("/api/toggle-actuator")
 def toggle_actuator(cmd: ActuatorCommand):
-    """Proxy request to switch the actuator"""
+    """Proxy request to switch the actuator."""
     try:
         res = requests.post(f"{LOGIC_API_URL}/api/actuators", json=cmd.dict(), timeout=2)
         res.raise_for_status()
@@ -59,7 +59,7 @@ def toggle_actuator(cmd: ActuatorCommand):
 
 @app.post("/api/add-rule")
 def create_rule(cmd: RuleCommand):
-    """Proxy request to add a rule"""
+    """Proxy request to add a rule."""
     try:
         res = requests.post(f"{LOGIC_API_URL}/api/rules", json=cmd.dict(), timeout=2)
         if res.status_code != 200:
@@ -71,7 +71,7 @@ def create_rule(cmd: RuleCommand):
 
 @app.delete("/api/delete-rule/{rule_id}")
 def delete_rule(rule_id: int):
-    """Proxy request to delete a rule"""
+    """Proxy request to delete a rule."""
     try:
         res = requests.delete(f"{LOGIC_API_URL}/api/rules/{rule_id}", timeout=2)
         res.raise_for_status()
