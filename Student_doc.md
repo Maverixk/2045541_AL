@@ -213,7 +213,7 @@ The automation_engine container does not connect to external services. It connec
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: core-automation-backend
+#### MICROSERVICE: automation-backend
 - TYPE: backend
 - DESCRIPTION: REST API server and background event handler for Martian base automation and rule evaluation.
 - PORTS: 8000
@@ -226,7 +226,7 @@ Distributed modular monolith: integrates a REST Controller layer for the UI, a S
 		
 	| HTTP METHOD | URL | Description | User Stories |
 	| ----------- | --- | ----------- | ------------ |
-    | GET | /api/status | Returns current metrics and the status of sensors actuators. | 1, 2 |
+    | GET | /api/status | Returns current metrics and the status of sensors and actuators. | 1, 2 |
     | GET | /api/rules | Returns the list of active automation rules read from the DB. | 5 |
     | POST | /api/rules | Adds a new automation rule to the DB. | 4 |
     | POST | /api/actuators | Manually forwards an "ON/OFF" state change to the simulator. | 3 |
@@ -260,18 +260,16 @@ The frontend container does not connect to external services. It communicates ex
 
 ### MICROSERVICES:
 
-#### MICROSERVICE: web-dashboard-ui
+#### MICROSERVICE: web-dashboard
 - TYPE: frontend
 - DESCRIPTION: Interactive web platform for astronauts to administer the simulated environment.
 - PORTS: 8001
 - TECHNOLOGICAL SPECIFICATION:
 Python 3.11 using FastAPI/Uvicorn to serve files. Employs the Jinja2 templating engine, HTML5, and basic CSS/JS for the client-side presentation.
 - SERVICE ARCHITECTURE:
-Server-Side Rendering (SSR) or Single Page Application interacting directly with the backend API layer.
-
+Single page application served by FastAPI. It interacts directly with the backend API layer via asynchronous SSE (Server-Sent Events) to render the DOM dynamically.
 - PAGES: 
 
 	| Name | Description | Related Microservice | User Stories |
 	| ---- | ----------- | -------------------- | ------------ |
-	| Dashboard / Home | Displays the list of sensors, recent values, and On/Off buttons for actuators. | core-automation-backend | 1, 2, 3 |
-	| Rules Editor | Module to view, insert, or delete autonomous automation logic rules. | core-automation-backend | 4, 5, 6 |
+	| Main Dashboard (`index.html`) | Single-page interface displaying real-time sensor metrics, actuator controls, and the automation rules manager (view/add/delete). | automation-backend | 1, 2, 3, 4, 5, 6 |

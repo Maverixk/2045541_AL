@@ -117,27 +117,30 @@
 
 <!-- Logic JS -->
 <script>
-    const REFRESH_RATE = 3000; // 3 seconds
+    const evtSource = new EventSource("/api/stream-dashboard");
 
-    async function fetchDashboardData() {
-        try {
-            const response = await fetch('/api/dashboard-data');
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
-            
-            document.getElementById('connection-status').innerHTML = '✅ System Online';
-            document.getElementById('connection-status').classList.replace('text-danger', 'text-success');
-
-            renderSensors(data.sensors);
-            renderActuators(data.actuators);
-            renderRules(data.rules);
-
-        } catch (error) {
-            console.error('Error fetching data:', error);
+    evtSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        
+        if (data.error) {
             document.getElementById('connection-status').innerHTML = '❌ System Offline';
             document.getElementById('connection-status').classList.replace('text-success', 'text-danger');
+            return;
         }
-    }
+
+        document.getElementById('connection-status').innerHTML = '✅ System Online';
+        document.getElementById('connection-status').classList.replace('text-danger', 'text-success');
+
+        renderSensors(data.sensors);
+        renderActuators(data.actuators);
+        renderRules(data.rules);
+    };
+
+    evtSource.onerror = function(err) {
+        console.error("EventSource failed:", err);
+        document.getElementById('connection-status').innerHTML = '❌ Connection Lost';
+        document.getElementById('connection-status').classList.replace('text-success', 'text-danger');
+    };
 
     function renderSensors(sensors) {
         const container = document.getElementById('sensors-container');
@@ -227,7 +230,6 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ actuator_name, target_state })
             });
-            fetchDashboardData(); 
         } catch (e) {
             alert('Failed to switch actuator');
         }
@@ -237,7 +239,6 @@
         if (!confirm('Are you sure you want to delete this rule?')) return;
         try {
             await fetch('/api/delete-rule/' + id, { method: 'DELETE' });
-            fetchDashboardData();
         } catch (e) {
             alert('Failed to delete rule');
         }
@@ -268,16 +269,10 @@
             }
             
             e.target.reset(); // clear form
-            fetchDashboardData();
         } catch (error) {
             alert('Error adding rule due to network or server crash.');
         }
     });
-
-    // Start long-polling
-    fetchDashboardData();
-    setInterval(fetchDashboardData, REFRESH_RATE);
-
 </script>
 </body>
 </html>

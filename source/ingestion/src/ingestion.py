@@ -27,7 +27,7 @@ def connect_to_rabbitmq():
             time.sleep(3)
 
 def run_ingestion():
-    f"Continuous polling from the sensors via REST every {POLLING_INTERVAL} seconds."
+    "Continuous polling from the sensors via REST."
     print(f"Start polling from simulator: {SIMULATOR_URL}", flush=True)
     
     connection, channel = connect_to_rabbitmq()

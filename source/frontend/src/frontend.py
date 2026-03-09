@@ -1,8 +1,10 @@
 import os
+import json
+import asyncio
 import requests
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 app = FastAPI(title="Mars Dashboard")
@@ -24,29 +26,42 @@ class RuleCommand(BaseModel):
     actuator_name: str
     target_state: str
 
+# SSE generator
+async def sse_dashboard_generator():
+    """Generator that yields dashboard data as Server-Sent Events."""
+    while True:
+        try:
+            status_res = requests.get(f"{LOGIC_API_URL}/api/status", timeout=2)
+            rules_res = requests.get(f"{LOGIC_API_URL}/api/rules", timeout=2)
+            
+            status_data = status_res.json() if status_res.status_code == 200 else {"sensors": {}, "actuators": {}}
+            rules_data = rules_res.json() if rules_res.status_code == 200 else {"rules": []}
+            
+            payload = {
+                "sensors": status_data.get("sensors", {}),
+                "actuators": status_data.get("actuators", {}),
+                "rules": rules_data.get("rules", [])
+            }
+            
+            # SSE strictly requires the "data: " prefix and double newline suffix
+            yield f"data: {json.dumps(payload)}\n\n"
+        
+        except requests.exceptions.RequestException as e:
+            error_payload = {"error": "Backend offline"}
+            yield f"data: {json.dumps(error_payload)}\n\n"
+        
+        # Stream updates every 3 seconds
+        await asyncio.sleep(3)
+
 @app.get("/")
 def read_root(request: Request):
     """Renders the index.html page."""
     return templates.TemplateResponse("index.html", {"request": request})       
 
-@app.get("/api/dashboard-data")
-def get_dashboard_data():
-    """Proxy point: contacts the Automation Engine to fetch updated data."""
-    try:
-        status_res = requests.get(f"{LOGIC_API_URL}/api/status", timeout=2)
-        rules_res = requests.get(f"{LOGIC_API_URL}/api/rules", timeout=2)
-        
-        status_data = status_res.json() if status_res.status_code == 200 else {"sensors": {}, "actuators": {}}
-        rules_data = rules_res.json() if rules_res.status_code == 200 else {"rules": []}
-        
-        return {
-            "sensors": status_data.get("sensors", {}),
-            "actuators": status_data.get("actuators", {}),
-            "rules": rules_data.get("rules", [])
-        }
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching data from Logic Engine: {e}", flush=True)
-        return {"sensors": {}, "actuators": {}, "rules": [], "error": "Backend offline"}
+@app.get("/api/stream-dashboard")
+async def stream_dashboard():
+    """SSE endpoint for real-time dashboard updates."""
+    return StreamingResponse(sse_dashboard_generator(), media_type="text/event-stream")
 
 @app.post("/api/toggle-actuator")
 def toggle_actuator(cmd: ActuatorCommand):
