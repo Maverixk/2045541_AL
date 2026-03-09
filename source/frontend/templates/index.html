@@ -148,25 +148,40 @@
         
         // Loop through each sensor
         for (const [sensor_id, metrics_obj] of Object.entries(sensors)) {
-            // Loop through each metric inside that sensor
+            let metricsContent = '';
+            let hasWarning = false;
+            let lastUpdate = '';
+
+            // Group all metrics for the same sensor inside a single card
             for (const [metric_name, s_data] of Object.entries(metrics_obj)) {
-                const isWarning = s_data.status === 'warning';
-                const cardBg = isWarning ? 'sensor-warning' : 'bg-white';
-                
-                const cardHtml = `
-                    <div class="col-md-3">
-                        <div class="card ${cardBg}">
-                            <div class="card-body">
-                                <h6 class="card-title text-truncate" title="${sensor_id}">${sensor_id}</h6>
-                                <h3 class="card-text">${parseFloat(s_data.value).toFixed(2)} <span class="fs-6">${s_data.unit}</span></h3>
-                                <small class="text-muted">Metric: ${s_data.metric}</small><br>
-                                <small class="text-muted">Last update: ${new Date(s_data.captured_at).toLocaleTimeString()}</small>
-                            </div>
-                        </div>
+                if (s_data.status === 'warning') hasWarning = true;
+                lastUpdate = new Date(s_data.captured_at).toLocaleTimeString(); // Take the latest
+                metricsContent += `
+                    <div class="d-flex justify-content-between align-items-center mb-1 border-bottom pb-1">
+                        <span class="text-muted text-capitalize">${s_data.metric}</span>
+                        <span class="fw-bold">${parseFloat(s_data.value).toFixed(2)} <span class="fs-6 fw-normal">${s_data.unit}</span></span>
                     </div>
                 `;
-                container.innerHTML += cardHtml;
             }
+
+            const cardBg = hasWarning ? 'sensor-warning' : 'bg-white';
+            
+            const cardHtml = `
+                <div class="col-md-4 col-lg-3 mb-3">
+                    <div class="card ${cardBg} h-100">
+                        <div class="card-header text-truncate fw-bold" title="${sensor_id}">
+                            ${sensor_id}
+                        </div>
+                        <div class="card-body">
+                            ${metricsContent}
+                        </div>
+                        <div class="card-footer px-3 py-2">
+                            <small class="text-muted">Last update: ${lastUpdate}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += cardHtml;
         }
     }
 
