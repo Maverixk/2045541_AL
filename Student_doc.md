@@ -88,7 +88,7 @@ Middleware component acting as the central nervous system for asynchronous event
 ## CONTAINER_NAME: database
 
 ### DESCRIPTION: 
-MariaDB relational database used to store historical normalized data and automation rule configurations.
+MariaDB relational database used to store automation rule configurations.
 
 ### USER STORIES:
 4) As an Operator, I want to create an automation rule from the dashboard so that the system can react automatically to sensor changes.
