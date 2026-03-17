@@ -1,6 +1,6 @@
 # Mars IoT Dashboard
 ## Overview
-The following repository contains all the material related to the hackathon held from March 6$^{th}$ 2026 to March 10$^{th}$ 2026 for the course of Laboratory in Advanced Programming, held by Sapienza University of Rome.
+The following repository contains all the material related to the hackathon held from March 6<sup>th</sup> 2026 to March 10<sup>th</sup> 2026 for the course of Laboratory in Advanced Programming, held by Sapienza University of Rome.
 
 ## Abstract
 The goal of the hackathon is to build a system capable of ingesting and normalizing data (through a Unified Event Schema) from a simulated IoT environment on Mars, and use these data to enforce some automation rules and to provide a real-time monitoring dashboard. Further technical details are available for reading in the `booklets/` directory.
